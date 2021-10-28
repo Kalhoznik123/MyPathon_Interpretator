@@ -9,7 +9,7 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
-#include <queue>
+
 namespace parse
 {
 
@@ -166,7 +166,7 @@ namespace parse
         const T &Expect() const{
             using namespace std::literals;
             if (!CurrentToken().Is<T>()){
-                throw LexerError("Not implemented"s);
+                throw LexerError("ERROR:The token type does not match the declared one"s);
             }
             return CurrentToken().As<T>();
         }
@@ -177,7 +177,7 @@ namespace parse
         void Expect(const U &value) const{
             using namespace std::literals;
             if (Expect<T>().value != value){
-                throw LexerError("Not implemented"s);
+                throw LexerError("ERROR: The token type does not match the declared one or the values do not match"s);
             }
         }
 
@@ -203,30 +203,16 @@ namespace parse
         }
 
     private:
-        const std::unordered_set<char> MARKS{'(', ')', ',', '.', ':', '+', '-', '*', '/', '=', '<', '>', '!', '?'};
-        const std::unordered_map<std::string, Token> KEY_WORDS{
-            {"class",token_type::Class{}},
-            {"return",token_type::Return{}},
-            {"if",token_type::If{}},
-            {"else",token_type::Else{}},
-            {"def",token_type::Def{}},
-            {"print",token_type::Print{}},
-            {"or",token_type::Or{}},
-            {"None",token_type::None{}},
-            {"and",token_type::And{}},
-            {"not",token_type::Not{}},
-            {"True",token_type::True{}},
-            {"False",token_type::False{}}
-        };
-        std::vector<Token> token_base_;
-        size_t current_token_ = 0;
-        size_t dend_number_ = 0;
+
+        std::vector<Token> tokens;
+        size_t current_pos_ = 0;
+        size_t indent_number_ = 0;
 
         void ParseTokens(std::istream &input);
         void ParseString(std::istream &input);
         void ParseNumber(std::istream &input);
-        void ParseKeyWordsOrIds(std::istream &input);
-        void ParseDend(std::istream &input);
+        void ParseWords(std::istream &input);
+        void ParseIndent(std::istream &input);
         void ParseOperation(std::istream &input);
     };
 } // namespace parse

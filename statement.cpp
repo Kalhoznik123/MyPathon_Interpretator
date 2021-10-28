@@ -18,14 +18,13 @@ const string INIT_METHOD = "__init__"s;
 
 ObjectHolder Assignment::Execute(Closure& closure, Context& context) {
 
-    //closure.ins
-    const auto it = closure.insert_or_assign(var_,rv_->Execute(closure,context));
+    const auto it = closure.insert_or_assign(var_name_,expression_->Execute(closure,context));
     return it.first->second;
 }
 
 Assignment::Assignment(std::string var, std::unique_ptr<Statement> rv)
-    :var_(std::move(var))
-    ,rv_(std::move(rv)){
+    :var_name_(std::move(var))
+    ,expression_(std::move(rv)){
 
 }
 
@@ -55,7 +54,7 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
     if (const auto it =fields.find(dotted_ids_.back());it!=fields.end()){
         return it->second;
     }
-    throw ::runtime_error("ERROR: Unknown name"s);
+    throw std::runtime_error("ERROR: Unknown name"s);
 }
 
 unique_ptr<Print> Print::Variable(const std::string& name) {
@@ -76,7 +75,7 @@ ObjectHolder Print::Execute(Closure& closure, Context& context) {
         const ObjectHolder value = arg->Execute(closure,context);
         if(!first){
             context.GetOutputStream() << ' ';
-        }        
+        }
         if(value){
             value->Print(context.GetOutputStream(),context);
         }else{
@@ -98,11 +97,15 @@ MethodCall::MethodCall(std::unique_ptr<Statement> object, std::string method,
 }
 
 ObjectHolder MethodCall::Execute(Closure& closure, Context& context) {
-    std::vector<runtime::ObjectHolder> object_hld_args;
+    std::vector<runtime::ObjectHolder> object_args;
     for (const auto &arg : args_){
-        object_hld_args.push_back(arg->Execute(closure, context));
+        object_args.push_back(arg->Execute(closure, context));
     }
-    return object_->Execute(closure, context).TryAs<runtime::ClassInstance>()->Call(method_, object_hld_args, context);
+
+     auto* cls = object_->Execute(closure, context).TryAs<runtime::ClassInstance>();
+    if(!cls)
+        throw std::runtime_error("ERROR: вызов метода не у экземпляра класса запрещен");
+    return cls->Call(method_, object_args, context);
 }
 
 ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
@@ -179,7 +182,7 @@ ObjectHolder Div::Execute(Closure& closure, Context& context) {
 }
 
 ObjectHolder Compound::Execute(Closure& closure, Context& context) {
-    for(const auto& arg: args_){
+    for(const auto& arg: instructions_){
         arg->Execute(closure,context);
     }
     return ObjectHolder::None();
@@ -202,12 +205,19 @@ FieldAssignment::FieldAssignment(VariableValue object, std::string field_name,
                                  std::unique_ptr<Statement> rv)
     :object_(std::move(object))
     ,field_name_(std::move(field_name))
-    ,rv_(std::move(rv)){
+    ,expression_(std::move(rv)){
 }
 
 ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
-    auto& fields = object_.Execute(closure,context).TryAs<runtime::ClassInstance>()->Fields();
-    fields[field_name_]= rv_->Execute(closure,context);
+
+    auto* cls = object_.Execute(closure,context).TryAs<runtime::ClassInstance>();
+
+    if(!cls){
+        throw std::runtime_error("ERROR:attempt to access a non-instance class field");
+    }
+    auto& fields = cls->Fields();
+
+    fields[field_name_]= expression_->Execute(closure,context);
     return fields[field_name_];
 }
 
@@ -219,7 +229,11 @@ IfElse::IfElse(std::unique_ptr<Statement> condition, std::unique_ptr<Statement> 
     }
 
 ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
-    if(condition_->Execute(closure,context).TryAs<runtime::Bool>()->GetValue()){
+    auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Bool>();
+    if(!inst_Ptr)
+        throw std::runtime_error("ERROR: value does not bool value");
+
+    if(inst_Ptr->GetValue()){
         return if_body_->Execute(closure,context);
     }else if(else_body_){
         return else_body_->Execute(closure,context);
@@ -229,7 +243,11 @@ ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
 
 ObjectHolder Or::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
-    if (lhs_arg.TryAs<runtime::Bool>()->GetValue())
+    auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
+    if(!inst_Ptr)
+        throw std::runtime_error("ERROR: value does not bool value");
+
+    if (inst_Ptr->GetValue())
     {
         return lhs_arg;
     }
@@ -239,14 +257,22 @@ ObjectHolder Or::Execute(Closure& closure, Context& context) {
 
 ObjectHolder And::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
-    if (!lhs_arg.TryAs<runtime::Bool>()->GetValue()){
+    auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
+    if(!inst_Ptr)
+        throw std::runtime_error("ERROR: value does not bool value");
+
+    if (!inst_Ptr->GetValue()){
         return lhs_arg;
     }
     return GetRhs()->Execute(closure, context);
 }
 
 ObjectHolder Not::Execute(Closure& closure, Context& context) {
-    return  ObjectHolder::Own(runtime::Bool{!GetArg()->Execute(closure,context).TryAs<runtime::Bool>()->GetValue()});
+    auto inst_Ptr = GetArg()->Execute(closure,context).TryAs<runtime::Bool>();
+    if(!inst_Ptr)
+        throw std::runtime_error("ERROR: value does not bool value");
+
+    return  ObjectHolder::Own(runtime::Bool{!inst_Ptr->GetValue()});
 }
 
 Comparison::Comparison(Comparator cmp, unique_ptr<Statement> lhs, unique_ptr<Statement> rhs)
@@ -259,23 +285,25 @@ ObjectHolder Comparison::Execute(Closure& closure, Context& context) {
 }
 
 NewInstance::NewInstance(const runtime::Class& class_, std::vector<std::unique_ptr<Statement>> args)
-    :class_inst_(class_)
+    :_class_(class_)
     ,args_(std::move(args)){
 }
 
 NewInstance::NewInstance(const runtime::Class& class_)
-    :class_inst_(class_) {
+    :_class_(class_) {
     }
 
 ObjectHolder NewInstance::Execute(Closure& closure, Context& context){
-    if(class_inst_.HasMethod(INIT_METHOD,args_.size())){
+    ObjectHolder oh = ObjectHolder::Own(runtime::ClassInstance(_class_));
+    auto class_inst_ = oh.TryAs<runtime::ClassInstance>();
+    if(class_inst_->HasMethod(INIT_METHOD,args_.size())){
         std::vector<runtime::ObjectHolder> new_args;
         for(const auto& arg: args_){
             new_args.push_back(arg->Execute(closure,context));
         }
-     class_inst_.Call(INIT_METHOD,new_args,context);
+     class_inst_->Call(INIT_METHOD,new_args,context);
     }
-    return ObjectHolder::Share(class_inst_);
+    return oh;
 }
 
 MethodBody::MethodBody(std::unique_ptr<Statement>&& body)

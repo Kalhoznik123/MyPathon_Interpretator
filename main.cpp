@@ -74,7 +74,7 @@ void TestArithmetics() {
 
     ostringstream output;
     RunMythonProgram(input, output);
-//auto aaa= output.str();
+
     ASSERT_EQUAL(output.str(), "15 120 -13 3 15\n");
 }
 
@@ -110,6 +110,71 @@ print y.value
 
     ASSERT_EQUAL(output.str(), "2\n3\n");
 }
+void TestMethodOverloading() {
+       istringstream input1(R"(
+class X:
+ def f(a):
+   print "one parameter overload"
+
+ def f(a, b):
+   print "two parameters overload"
+
+x = X()
+x.f(1)
+)");
+
+       istringstream input2(R"(
+class X:
+ def f(a):
+   print "one parameter overload"
+
+ def f(a, b):
+   print "two parameters overload"
+
+x = X()
+x.f(1, 2)
+)");
+
+       ostringstream output;
+       bool e1 = false;
+       try {
+           RunMythonProgram(input1, output);
+       } catch (const std::runtime_error &) {
+           e1 = true;
+       }
+       bool e2 = false;
+       try {
+           RunMythonProgram(input2, output);
+       } catch (const std::runtime_error &) {
+           e2 = true;
+       }
+       ASSERT(e1 == e2);
+   }
+void TextAssigment2(){
+    istringstream input(R"(
+class X:
+  def __init__():
+    self.value = 123
+
+class Z:
+  def spawn():
+    return X()
+
+z = Z()
+a = z.spawn()
+a.value = 456
+b = z.spawn()
+if a.value == 456:
+  print "Success"
+else:
+  print "Failure", a.value
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+
+    ASSERT_EQUAL(output.str(), "Success\n");
+}
 
 void TestAll() {
     TestRunner tr;
@@ -123,6 +188,8 @@ void TestAll() {
     RUN_TEST(tr, TestAssignments);
     RUN_TEST(tr, TestArithmetics);
     RUN_TEST(tr, TestVariablesArePointers);
+    RUN_TEST(tr, TestMethodOverloading);
+    RUN_TEST(tr,TextAssigment2);
 }
 
 }  // namespace

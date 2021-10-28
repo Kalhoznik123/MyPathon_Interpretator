@@ -113,7 +113,6 @@ print x.calc(2)
     runtime::Closure closure;
     auto tree = ParseProgramFromString(program);
     tree->Execute(closure, context);
-//auto aaa =context.output.str();
 
     ASSERT_EQUAL(context.output.str(), "2\n"s);
 }

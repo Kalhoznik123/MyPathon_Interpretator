@@ -52,8 +52,8 @@ public:
 
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 private:
-    std::string var_;
-    std::unique_ptr<Statement> rv_;
+    std::string var_name_;
+    std::unique_ptr<Statement> expression_;
 };
 
 // Присваивает полю object.field_name значение выражения rv
@@ -65,7 +65,7 @@ public:
 private:
     VariableValue object_;
     std::string field_name_;
-    std::unique_ptr<Statement> rv_;
+    std::unique_ptr<Statement> expression_;
 };
 
 // Значение None
@@ -128,7 +128,8 @@ public:
     // Возвращает объект, содержащий значение типа ClassInstance
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 private:
-    runtime::ClassInstance class_inst_;
+    const runtime::Class& _class_;
+    //runtime::ClassInstance class_inst_;
     std::vector<std::unique_ptr<Statement>> args_;
 };
 
@@ -160,8 +161,7 @@ class BinaryOperation : public Statement {
 public:
     BinaryOperation(std::unique_ptr<Statement> lhs, std::unique_ptr<Statement> rhs)
         :lhs_(std::move(lhs))
-        ,rhs_(std::move(rhs)) {
-        // Реализуйте метод самостоятельно
+        ,rhs_(std::move(rhs)) {        
     }
 protected:
     const std::unique_ptr<Statement>& GetLhs() const{
@@ -259,18 +259,18 @@ public:
 
     // Добавляет очередную инструкцию в конец составной инструкции
     void AddStatement(std::unique_ptr<Statement> stmt) {
-        args_.push_back(std::move(stmt));
+        instructions_.push_back(std::move(stmt));
     }
 
     // Последовательно выполняет добавленные инструкции. Возвращает None
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 
 private:
-    std::vector<std::unique_ptr<Statement>> args_;
+    std::vector<std::unique_ptr<Statement>> instructions_;
 
     template<typename T0,typename... Args>
     void FillArgs(T0&& first_arg,Args&&... args){
-        args_.push_back(std::move(first_arg));
+        instructions_.push_back(std::move(first_arg));
         if constexpr (sizeof... (args)!= 0)
             FillArgs(args...);
     }

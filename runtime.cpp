@@ -6,7 +6,12 @@
 #include <algorithm>
 
 using namespace std;
+namespace  {
+const std::string STR_METHOD = "__str__"s;
+const std::string EQUAL_METHOD  = "__eq__"s;
+const std::string LESS_METHOD  = "__lt__"s;
 
+}
 namespace runtime
 {
 
@@ -47,28 +52,30 @@ namespace runtime
     }
 
     bool IsTrue(const ObjectHolder &object){
-        if (object.TryAs<Number>()){
-            return object.TryAs<Number>()->GetValue() != 0;
+
+        if (const auto* ptr = object.TryAs<Number>()){
+            return ptr->GetValue() != 0;
         }
-        else if (object.TryAs<String>()){
-            return !object.TryAs<String>()->GetValue().empty();
+        else if (const auto* ptr = object.TryAs<String>()){
+            return !ptr->GetValue().empty();
         }
-        else if (object.TryAs<Bool>()){
-            return object.TryAs<Bool>()->GetValue() == true;
+        else if (const auto* ptr = object.TryAs<Bool>()){
+            return ptr->GetValue() == true;
         }else{
             return false;
         }
     }
 
     void ClassInstance::Print(std::ostream &os, Context &context){
-        if (HasMethod("__str__"s, 0))
-            Call("__str__"s, {}, context).Get()->Print(os, context);
+        if (HasMethod(STR_METHOD, 0))
+            Call(STR_METHOD, {}, context).Get()->Print(os, context);
         else
             os << this;
     }
 
     bool ClassInstance::HasMethod(const std::string &method, size_t argument_count) const{
-        return class_.GetMethod(method) != nullptr && class_.GetMethod(method)->formal_params.size() == argument_count;
+     const runtime::Method* const method_ptr = class_.GetMethod(method);
+        return method_ptr != nullptr && method_ptr->formal_params.size() == argument_count;
     }
 
     Closure &ClassInstance::Fields(){
@@ -87,33 +94,38 @@ namespace runtime
                                      const std::vector<ObjectHolder> &actual_args,
                                      Context &context){
         if (!HasMethod(method, actual_args.size())){
-            throw std::runtime_error("ERROR: This method not Not implemented"s);
+            throw std::runtime_error("ERROR:Такого метода не существует"s);
         }
         runtime::Closure args;
         args["self"s] = ObjectHolder::Share(*this);
+        const runtime::Method* const method_ptr = class_.GetMethod(method);
         for (size_t i = 0; i < actual_args.size(); ++i){
-            args[class_.GetMethod(method)->formal_params[i]] = actual_args[i];
+            args[method_ptr->formal_params[i]] = actual_args[i];
         }
-        return class_.GetMethod(method)->body->Execute(args, context);
+        return method_ptr->body->Execute(args, context);
     }
 
     Class::Class(std::string name, std::vector<Method> methods, const Class *parent)
         : name_(std::move(name))
         , methods_(std::move(methods))
-        , parent_(*parent)
+        , parent_(parent)
     {
     }
 
     const Method *Class::GetMethod(const std::string &name) const{
+
         auto it = std::find_if(methods_.begin(), methods_.end(), [&name](const auto &method){ return method.name == name; });
+
 
         if (it != methods_.end()){
             return &*it;
-        }
-        else if (&parent_ != nullptr){
-            auto it = parent_.GetMethod(name);
-            if (it != nullptr)
-                return it;
+      }
+        else if(parent_ != nullptr){
+
+            auto method_ptr = parent_->GetMethod(name);
+            if (method_ptr != nullptr)
+                return method_ptr;
+
         }
         return nullptr;
     }
@@ -143,8 +155,8 @@ namespace runtime
         else if (!lhs && !rhs){
             return true;
         }
-        else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod("__eq__"s, 1)){
-            return lhs.TryAs<ClassInstance>()->Call("__eq__"s, {rhs}, context).TryAs<Bool>()->GetValue();
+        else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod(EQUAL_METHOD, 1)){
+            return lhs.TryAs<ClassInstance>()->Call(EQUAL_METHOD, {rhs}, context).TryAs<Bool>()->GetValue();
         }else{
         throw std::runtime_error("ERROR:These objects cannot be compared"s);
         }
@@ -161,8 +173,8 @@ namespace runtime
         else if (lhs.TryAs<Bool>() && rhs.TryAs<Bool>()){
             return lhs.TryAs<Bool>()->GetValue() < rhs.TryAs<Bool>()->GetValue();
         }
-        else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod("__lt__"s, 1)){
-            return lhs.TryAs<ClassInstance>()->Call("__lt__"s, {rhs}, context).TryAs<Bool>()->GetValue();
+        else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod(LESS_METHOD, 1)){
+            return lhs.TryAs<ClassInstance>()->Call(LESS_METHOD, {rhs}, context).TryAs<Bool>()->GetValue();
         }
         throw std::runtime_error("ERROR:These objects cannot be compared by less"s);
     }

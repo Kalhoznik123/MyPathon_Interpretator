@@ -150,7 +150,7 @@ namespace runtime
     private:
         std::string name_;
         std::vector<Method> methods_;
-        const Class& parent_;
+        const Class* parent_;
     };
 
     // Экземпляр класса
