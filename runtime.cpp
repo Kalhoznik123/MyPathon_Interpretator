@@ -15,6 +15,15 @@ const std::string LESS_METHOD  = "__lt__"s;
 namespace runtime
 {
 
+template<typename Type>
+bool equal(const ObjectHolder &lhs, const ObjectHolder &rhs){
+    return   lhs.TryAs<Type>()->GetValue() == rhs.TryAs<Type>()->GetValue();;
+}
+template<typename Type>
+bool less(const ObjectHolder &lhs, const ObjectHolder &rhs){
+    return   lhs.TryAs<Type>()->GetValue() < rhs.TryAs<Type>()->GetValue();;
+}
+
     ObjectHolder::ObjectHolder(std::shared_ptr<Object> data)
         : data_(std::move(data))
     {
@@ -144,13 +153,16 @@ namespace runtime
 
     bool Equal(const ObjectHolder &lhs, const ObjectHolder &rhs, Context &context){
         if (lhs.TryAs<Number>() && rhs.TryAs<Number>()){
-            return lhs.TryAs<Number>()->GetValue() == rhs.TryAs<Number>()->GetValue();
+            return equal<Number>(lhs,rhs);
+            //return lhs.TryAs<Number>()->GetValue() == rhs.TryAs<Number>()->GetValue();
         }
         else if (lhs.TryAs<String>() && rhs.TryAs<String>()){
-            return lhs.TryAs<String>()->GetValue() == rhs.TryAs<String>()->GetValue();
+            return equal<String>(lhs,rhs);
+            //return lhs.TryAs<String>()->GetValue() == rhs.TryAs<String>()->GetValue();
         }
         else if (lhs.TryAs<Bool>() && rhs.TryAs<Bool>()){
-            return lhs.TryAs<Bool>()->GetValue() == rhs.TryAs<Bool>()->GetValue();
+             return equal<Bool>(lhs,rhs);
+            // return lhs.TryAs<Bool>()->GetValue() == rhs.TryAs<Bool>()->GetValue();
         }
         else if (!lhs && !rhs){
             return true;
@@ -165,13 +177,16 @@ namespace runtime
     bool Less(const ObjectHolder &lhs, const ObjectHolder &rhs, Context &context)
     {
         if (lhs.TryAs<Number>() && rhs.TryAs<Number>()){
-            return lhs.TryAs<Number>()->GetValue() < rhs.TryAs<Number>()->GetValue();
+            return less<Number>(lhs,rhs);
+            //return lhs.TryAs<Number>()->GetValue() < rhs.TryAs<Number>()->GetValue();
         }
         else if (lhs.TryAs<String>() && rhs.TryAs<String>()){
-            return lhs.TryAs<String>()->GetValue() < rhs.TryAs<String>()->GetValue();
+            return less<String>(lhs,rhs);
+            //return lhs.TryAs<String>()->GetValue() < rhs.TryAs<String>()->GetValue();
         }
         else if (lhs.TryAs<Bool>() && rhs.TryAs<Bool>()){
-            return lhs.TryAs<Bool>()->GetValue() < rhs.TryAs<Bool>()->GetValue();
+            return less<Bool>(lhs,rhs);
+            //return lhs.TryAs<Bool>()->GetValue() < rhs.TryAs<Bool>()->GetValue();
         }
         else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod(LESS_METHOD, 1)){
             return lhs.TryAs<ClassInstance>()->Call(LESS_METHOD, {rhs}, context).TryAs<Bool>()->GetValue();

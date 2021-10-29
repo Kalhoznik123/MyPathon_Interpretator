@@ -175,7 +175,18 @@ else:
 
     ASSERT_EQUAL(output.str(), "Success\n");
 }
+void Test() {
+    istringstream input(R"(
+a = 123
+print a.b.c
+print "test"
+)");
 
+    ostringstream output;
+    RunMythonProgram(input, output);
+    auto a = output.str();
+    std::cout << "Test" << std::endl;
+}
 void TestAll() {
     TestRunner tr;
     parse::RunOpenLexerTests(tr);
@@ -190,6 +201,7 @@ void TestAll() {
     RUN_TEST(tr, TestVariablesArePointers);
     RUN_TEST(tr, TestMethodOverloading);
     RUN_TEST(tr,TextAssigment2);
+    //RUN_TEST(tr,Test);
 }
 
 }  // namespace

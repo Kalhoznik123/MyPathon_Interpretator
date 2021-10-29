@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -47,8 +48,14 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
     }
 
     ObjectHolder obj = closure.at(dotted_ids_[0]);
+  auto* class_ptr = obj.TryAs<runtime::ClassInstance>();
+    if(!class_ptr){
+        throw std::runtime_error("ERROR:Accessing a non-existent field"s);
+    }
     for (size_t i = 1; i + 1 < dotted_ids_.size(); ++i){
+
         obj = obj.TryAs<runtime::ClassInstance>()->Fields().at(dotted_ids_[i]);
+
     }
     const auto& fields = obj.TryAs<runtime::ClassInstance>()->Fields();
     if (const auto it =fields.find(dotted_ids_.back());it!=fields.end()){
@@ -85,7 +92,7 @@ ObjectHolder Print::Execute(Closure& closure, Context& context) {
             break;
         first = false;
     }
-    context.GetOutputStream() << std::endl;
+    context.GetOutputStream() << "\n";
     return ObjectHolder::None();
 }
 
@@ -104,24 +111,27 @@ ObjectHolder MethodCall::Execute(Closure& closure, Context& context) {
 
      auto* cls = object_->Execute(closure, context).TryAs<runtime::ClassInstance>();
     if(!cls)
-        throw std::runtime_error("ERROR: вызов метода не у экземпляра класса запрещен");
+
+        throw std::runtime_error("ERROR:accessing a non-existent field");
     return cls->Call(method_, object_args, context);
 }
 
 ObjectHolder Stringify::Execute(Closure& closure, Context& context) {
     const auto arg =GetArg()->Execute(closure,context);
+    std::ostringstream out;
     if(const auto ptr = arg.TryAs<runtime::Number>()){
-        return ObjectHolder::Own(runtime::String(std::to_string(ptr->GetValue())));
+        ptr->Print(out,context);
+        return ObjectHolder::Own(runtime::String(out.str()));
     }else if(const auto ptr = arg.TryAs<runtime::String>()){
-        return ObjectHolder::Own(runtime::String(ptr->GetValue()));
+              ptr->Print(out,context);
+        return ObjectHolder::Own(runtime::String(out.str()));
     }else if(const auto ptr = arg.TryAs<runtime::Bool>()){
-        std::ostringstream out;
         ptr->Print(out,context);
         return ObjectHolder::Own(runtime::String(out.str()));
     }else if(const auto ptr = arg.TryAs<runtime::ClassInstance>()){
-        std::ostringstream out;
+
         ptr->Print(out,context);
-        return ObjectHolder::Own(runtime::String(out.str()));;
+        return ObjectHolder::Own(runtime::String(out.str()));
     }else{
         return ObjectHolder::Own(runtime::String("None"));
     }
@@ -178,6 +188,7 @@ ObjectHolder Div::Execute(Closure& closure, Context& context) {
         }
         return ObjectHolder::Own(Number{lhs_arg_ptr->GetValue() / rhs_arg_ptr->GetValue()});
     }
+
     throw  std::runtime_error("ERROR: Incorrect operation"s);
 }
 
@@ -213,6 +224,7 @@ ObjectHolder FieldAssignment::Execute(Closure& closure, Context& context) {
     auto* cls = object_.Execute(closure,context).TryAs<runtime::ClassInstance>();
 
     if(!cls){
+
         throw std::runtime_error("ERROR:attempt to access a non-instance class field");
     }
     auto& fields = cls->Fields();
@@ -231,6 +243,7 @@ IfElse::IfElse(std::unique_ptr<Statement> condition, std::unique_ptr<Statement> 
 ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
     auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Bool>();
     if(!inst_Ptr)
+
         throw std::runtime_error("ERROR: value does not bool value");
 
     if(inst_Ptr->GetValue()){
@@ -245,6 +258,7 @@ ObjectHolder Or::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
     auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
     if(!inst_Ptr)
+
         throw std::runtime_error("ERROR: value does not bool value");
 
     if (inst_Ptr->GetValue())
@@ -259,6 +273,7 @@ ObjectHolder And::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
     auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
     if(!inst_Ptr)
+
         throw std::runtime_error("ERROR: value does not bool value");
 
     if (!inst_Ptr->GetValue()){
@@ -270,6 +285,7 @@ ObjectHolder And::Execute(Closure& closure, Context& context) {
 ObjectHolder Not::Execute(Closure& closure, Context& context) {
     auto inst_Ptr = GetArg()->Execute(closure,context).TryAs<runtime::Bool>();
     if(!inst_Ptr)
+
         throw std::runtime_error("ERROR: value does not bool value");
 
     return  ObjectHolder::Own(runtime::Bool{!inst_Ptr->GetValue()});
@@ -314,7 +330,7 @@ ObjectHolder MethodBody::Execute(Closure& closure, Context& context) {
     try{
         return body_->Execute(closure,context);
     }catch (ObjectHolder& obj) {
-        return obj;
+        return std::move(obj);
     }
     return ObjectHolder::None();
 }
