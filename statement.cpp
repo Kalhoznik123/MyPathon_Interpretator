@@ -50,11 +50,14 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
     ObjectHolder obj = closure.at(dotted_ids_[0]);
   auto* class_ptr = obj.TryAs<runtime::ClassInstance>();
     if(!class_ptr){
-        throw std::runtime_error("ERROR:Accessing a non-existent field"s);
+        throw std::runtime_error("ERROR:The object is not a class"s);
     }
     for (size_t i = 1; i + 1 < dotted_ids_.size(); ++i){
 
-        obj = obj.TryAs<runtime::ClassInstance>()->Fields().at(dotted_ids_[i]);
+        const auto item = class_ptr->Fields().find(dotted_ids_[i]);
+      if(item == class_ptr->Fields().end())
+          throw std::runtime_error("ERROR:Accessing a non-existent field"s);
+        obj = item->second;
 
     }
     const auto& fields = obj.TryAs<runtime::ClassInstance>()->Fields();
@@ -111,8 +114,7 @@ ObjectHolder MethodCall::Execute(Closure& closure, Context& context) {
 
      auto* cls = object_->Execute(closure, context).TryAs<runtime::ClassInstance>();
     if(!cls)
-
-        throw std::runtime_error("ERROR:accessing a non-existent field");
+        throw std::runtime_error("ERROR:the object is not a class");
     return cls->Call(method_, object_args, context);
 }
 
@@ -241,55 +243,54 @@ IfElse::IfElse(std::unique_ptr<Statement> condition, std::unique_ptr<Statement> 
     }
 
 ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
-    auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Bool>();
-    if(!inst_Ptr)
 
+
+    if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Bool>()){
+        return Exec(inst_Ptr,closure,context);
+    }else if (auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Number>()) {
+        return  Exec(inst_Ptr,closure,context);
+    }else{
         throw std::runtime_error("ERROR: value does not bool value");
-
-    if(inst_Ptr->GetValue()){
-        return if_body_->Execute(closure,context);
-    }else if(else_body_){
-        return else_body_->Execute(closure,context);
     }
-    return ObjectHolder::None();
+
 }
 
 ObjectHolder Or::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
-    auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
-    if(!inst_Ptr)
 
+    if(auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>()){
+        return Exec(inst_Ptr,closure,context);
+    }else if (auto inst_Ptr = lhs_arg.TryAs<runtime::Number>()) {
+        return Exec(inst_Ptr,closure,context);
+    }else{
         throw std::runtime_error("ERROR: value does not bool value");
-
-    if (inst_Ptr->GetValue())
-    {
-        return lhs_arg;
     }
-    return GetRhs()->Execute(closure, context);
 
 }
 
 ObjectHolder And::Execute(Closure& closure, Context& context) {
     ObjectHolder lhs_arg = GetLhs()->Execute(closure, context);
-    auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>();
-    if(!inst_Ptr)
-
+    if(auto inst_Ptr = lhs_arg.TryAs<runtime::Bool>()){
+        return Exec(inst_Ptr,closure,context);
+    }else if (auto inst_Ptr = lhs_arg.TryAs<runtime::Number>()) {
+        return Exec(inst_Ptr,closure,context);
+    }else{
         throw std::runtime_error("ERROR: value does not bool value");
-
-    if (!inst_Ptr->GetValue()){
-        return lhs_arg;
     }
-    return GetRhs()->Execute(closure, context);
+
 }
 
 ObjectHolder Not::Execute(Closure& closure, Context& context) {
-    auto inst_Ptr = GetArg()->Execute(closure,context).TryAs<runtime::Bool>();
-    if(!inst_Ptr)
-
-        throw std::runtime_error("ERROR: value does not bool value");
-
+const auto arg = GetArg()->Execute(closure,context);
+if(auto inst_Ptr = arg.TryAs<runtime::Bool>()){
     return  ObjectHolder::Own(runtime::Bool{!inst_Ptr->GetValue()});
+}else if (auto inst_Ptr = arg.TryAs<runtime::Number>()) {
+   return  ObjectHolder::Own(runtime::Bool{!inst_Ptr->GetValue()});
+}else{
+    throw std::runtime_error("ERROR: value does not bool value");
 }
+}
+
 
 Comparison::Comparison(Comparator cmp, unique_ptr<Statement> lhs, unique_ptr<Statement> rhs)
     : BinaryOperation(std::move(lhs), std::move(rhs))
@@ -327,12 +328,16 @@ MethodBody::MethodBody(std::unique_ptr<Statement>&& body)
 }
 
 ObjectHolder MethodBody::Execute(Closure& closure, Context& context) {
+    ObjectHolder result = ObjectHolder::None();
+
     try{
-        return body_->Execute(closure,context);
+        result = std::move(body_->Execute(closure,context));
+
     }catch (ObjectHolder& obj) {
-        return std::move(obj);
+        result = std::move(obj);
+
     }
-    return ObjectHolder::None();
+    return result;
 }
 
 }  // namespace ast

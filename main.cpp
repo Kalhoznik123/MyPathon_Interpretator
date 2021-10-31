@@ -175,9 +175,27 @@ else:
 
     ASSERT_EQUAL(output.str(), "Success\n");
 }
-void Test() {
+void TestBoolConversion() {
     istringstream input(R"(
-a = 123
+a = 1
+if a:
+  print "truthy"
+else:
+  print "falsey"
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    auto a = output.str();
+    std::cout << "Test" << std::endl;
+}
+
+void TestClass() {
+    istringstream input(R"(
+class A:
+  def dummy():
+    print "pass"
+a = A()
 print a.b.c
 print "test"
 )");
@@ -200,8 +218,9 @@ void TestAll() {
     RUN_TEST(tr, TestArithmetics);
     RUN_TEST(tr, TestVariablesArePointers);
     RUN_TEST(tr, TestMethodOverloading);
-    RUN_TEST(tr,TextAssigment2);
-    //RUN_TEST(tr,Test);
+    RUN_TEST(tr, TextAssigment2);
+    RUN_TEST(tr, TestBoolConversion);
+    RUN_TEST(tr, TestClass);
 }
 
 }  // namespace

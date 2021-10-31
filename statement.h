@@ -128,8 +128,7 @@ public:
     // Возвращает объект, содержащий значение типа ClassInstance
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
 private:
-    const runtime::Class& _class_;
-    //runtime::ClassInstance class_inst_;
+    const runtime::Class& _class_;    
     std::vector<std::unique_ptr<Statement>> args_;
 };
 
@@ -229,6 +228,15 @@ public:
     // Значение аргумента rhs вычисляется, только если значение lhs
     // после приведения к Bool равно False
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+private:
+    template<typename ObjPtr>
+    runtime::ObjectHolder Exec(const ObjPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+        if (obj_ptr->GetValue())
+        {
+            return GetLhs()->Execute(closure, context);
+        }
+        return GetRhs()->Execute(closure, context);
+    }
 };
 
 // Возвращает результат вычисления логической операции and над lhs и rhs
@@ -238,6 +246,14 @@ public:
     // Значение аргумента rhs вычисляется, только если значение lhs
     // после приведения к Bool равно True
     runtime::ObjectHolder Execute(runtime::Closure& closure, runtime::Context& context) override;
+private:
+    template<typename ObjPtr>
+    runtime::ObjectHolder Exec(const ObjPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+        if (!obj_ptr->GetValue()){
+            return GetLhs()->Execute(closure, context);
+        }
+        return GetRhs()->Execute(closure, context);
+    }
 };
 
 // Возвращает результат вычисления логической операции not над единственным аргументом операции
@@ -329,6 +345,17 @@ private:
     std::unique_ptr<Statement> condition_;
     std::unique_ptr<Statement> if_body_;
     std::unique_ptr<Statement> else_body_;
+
+    template<typename ObjPtr>
+    runtime::ObjectHolder Exec(const ObjPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+        if(obj_ptr->GetValue()){
+            return if_body_->Execute(closure,context);
+        }else if(else_body_){
+            return else_body_->Execute(closure,context);
+        }
+        return runtime::ObjectHolder::None();
+    }
+
 };
 
 // Операция сравнения

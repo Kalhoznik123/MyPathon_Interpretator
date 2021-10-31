@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <charconv>
 #include <unordered_map>
-
+#include <unordered_set>
 
 using namespace std;
 
@@ -145,7 +145,7 @@ namespace parse
                     break;
                 }
                 else{
-                    ParseWords(in);
+                    ParseWord(in);
 
                 }
             }
@@ -201,7 +201,7 @@ namespace parse
                 s.push_back(ch);
             }
         }
-        tokens.emplace_back(token_type::String{s});
+        tokens.push_back(token_type::String{s});
     }
 
     void Lexer::ParseNumber(std::istream &input)
@@ -212,10 +212,10 @@ namespace parse
             parsed_num += static_cast<char>(input.get());
         }
 
-        tokens.emplace_back(token_type::Number{std::stoi(parsed_num)});
+        tokens.push_back(token_type::Number{std::stoi(parsed_num)});
     }
 
-    void Lexer::ParseWords(std::istream &input){
+    void Lexer::ParseWord(std::istream &input){
         std::string s;
         char c = input.get();
         while (c != ' ' && c != EOF && c != '\n'){
@@ -264,7 +264,7 @@ namespace parse
 
     void Lexer::ParseOperation(std::istream &input)
     {
-        char c = input.get();
+       const  char c = input.get();
         if (c == '!' && input.peek() == '='){
 
             tokens.push_back(token_type::NotEq{});

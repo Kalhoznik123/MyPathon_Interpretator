@@ -128,13 +128,11 @@ bool less(const ObjectHolder &lhs, const ObjectHolder &rhs){
 
         if (it != methods_.end()){
             return &*it;
-      }
-        else if(parent_ != nullptr){
+        }else if(parent_ != nullptr){
 
             auto method_ptr = parent_->GetMethod(name);
             if (method_ptr != nullptr)
                 return method_ptr;
-
         }
         return nullptr;
     }

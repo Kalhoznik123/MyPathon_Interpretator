@@ -7,8 +7,7 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include <unordered_set>
-#include <unordered_map>
+
 
 namespace parse
 {
@@ -198,7 +197,7 @@ namespace parse
         void ExpectNext(const U &value){
             using namespace std::literals;
             if (ExpectNext<T>().value != value){
-                throw LexerError("Not implemented"s);
+                throw LexerError("ERROR: The token type does not match the declared one or the values do not match"s);
             }
         }
 
@@ -211,7 +210,7 @@ namespace parse
         void ParseTokens(std::istream &input);
         void ParseString(std::istream &input);
         void ParseNumber(std::istream &input);
-        void ParseWords(std::istream &input);
+        void ParseWord(std::istream &input);
         void ParseIndent(std::istream &input);
         void ParseOperation(std::istream &input);
     };
