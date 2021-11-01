@@ -113,11 +113,11 @@ print y.value
 void TestMethodOverloading() {
        istringstream input1(R"(
 class X:
- def f(a):
-   print "one parameter overload"
+  def f(a):
+    print "one parameter overload"
 
- def f(a, b):
-   print "two parameters overload"
+  def f(a, b):
+    print "two parameters overload"
 
 x = X()
 x.f(1)
@@ -125,11 +125,11 @@ x.f(1)
 
        istringstream input2(R"(
 class X:
- def f(a):
-   print "one parameter overload"
+  def f(a):
+    print "one parameter overload"
 
- def f(a, b):
-   print "two parameters overload"
+  def f(a, b):
+    print "two parameters overload"
 
 x = X()
 x.f(1, 2)

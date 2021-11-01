@@ -4,7 +4,8 @@
 #include <optional>
 #include <sstream>
 #include <algorithm>
-
+#include <set>
+#include <string_view>
 using namespace std;
 namespace  {
 const std::string STR_METHOD = "__str__"s;
@@ -116,9 +117,16 @@ bool less(const ObjectHolder &lhs, const ObjectHolder &rhs){
 
     Class::Class(std::string name, std::vector<Method> methods, const Class *parent)
         : name_(std::move(name))
-        , methods_(std::move(methods))
         , parent_(parent)
     {
+                std::set<std::string_view> tmp;
+                for(const auto& method: methods){
+            if(!tmp.insert(method.name).second){
+                throw std::runtime_error("ERROR:method overloading is not supported"s);
+            }
+        }
+        methods_ = std::move(methods);
+
     }
 
     const Method *Class::GetMethod(const std::string &name) const{

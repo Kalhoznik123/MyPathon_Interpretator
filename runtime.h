@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
+#include <set>
 
 namespace runtime
 {
@@ -123,6 +123,7 @@ namespace runtime
 
     // Метод класса
     struct Method{
+
         // Имя метода
         std::string name;
         // Имена формальных параметров метода
@@ -148,6 +149,12 @@ namespace runtime
         void Print(std::ostream &os, Context &context) override;
 
     private:
+        struct Cmp{
+            bool operator()(const runtime::Method& lhs,const runtime::Method& rhs)const {
+                return lhs.name < rhs.name;
+            }
+        };
+
         std::string name_;
         std::vector<Method> methods_;
         const Class* parent_;
