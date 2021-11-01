@@ -159,16 +159,14 @@ bool less(const ObjectHolder &lhs, const ObjectHolder &rhs){
 
     bool Equal(const ObjectHolder &lhs, const ObjectHolder &rhs, Context &context){
         if (lhs.TryAs<Number>() && rhs.TryAs<Number>()){
-            return equal<Number>(lhs,rhs);
-            //return lhs.TryAs<Number>()->GetValue() == rhs.TryAs<Number>()->GetValue();
+            return equal<Number>(lhs,rhs);            
         }
         else if (lhs.TryAs<String>() && rhs.TryAs<String>()){
             return equal<String>(lhs,rhs);
-            //return lhs.TryAs<String>()->GetValue() == rhs.TryAs<String>()->GetValue();
+
         }
         else if (lhs.TryAs<Bool>() && rhs.TryAs<Bool>()){
-             return equal<Bool>(lhs,rhs);
-            // return lhs.TryAs<Bool>()->GetValue() == rhs.TryAs<Bool>()->GetValue();
+             return equal<Bool>(lhs,rhs);            
         }
         else if (!lhs && !rhs){
             return true;
@@ -183,16 +181,13 @@ bool less(const ObjectHolder &lhs, const ObjectHolder &rhs){
     bool Less(const ObjectHolder &lhs, const ObjectHolder &rhs, Context &context)
     {
         if (lhs.TryAs<Number>() && rhs.TryAs<Number>()){
-            return less<Number>(lhs,rhs);
-            //return lhs.TryAs<Number>()->GetValue() < rhs.TryAs<Number>()->GetValue();
+            return less<Number>(lhs,rhs);            
         }
         else if (lhs.TryAs<String>() && rhs.TryAs<String>()){
-            return less<String>(lhs,rhs);
-            //return lhs.TryAs<String>()->GetValue() < rhs.TryAs<String>()->GetValue();
+            return less<String>(lhs,rhs);           
         }
         else if (lhs.TryAs<Bool>() && rhs.TryAs<Bool>()){
-            return less<Bool>(lhs,rhs);
-            //return lhs.TryAs<Bool>()->GetValue() < rhs.TryAs<Bool>()->GetValue();
+            return less<Bool>(lhs,rhs);            
         }
         else if (lhs.TryAs<ClassInstance>() && lhs.TryAs<ClassInstance>()->HasMethod(LESS_METHOD, 1)){
             return lhs.TryAs<ClassInstance>()->Call(LESS_METHOD, {rhs}, context).TryAs<Bool>()->GetValue();
