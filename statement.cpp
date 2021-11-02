@@ -281,7 +281,7 @@ ObjectHolder Or::Execute(Closure& closure, Context& context) {
         return Exec(inst_Ptr,closure,context);
     }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::String>()){
         return  ExecIfString(inst_Ptr,closure,context);
-    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::ClassInstance>()){
+    }else if(lhs_arg.TryAs<runtime::ClassInstance>()){
         return GetLhs()->Execute(closure,context);
     }else if(!lhs_arg.operator bool()){
         return GetRhs()->Execute(closure,context);
@@ -299,7 +299,7 @@ ObjectHolder And::Execute(Closure& closure, Context& context) {
         return Exec(inst_Ptr,closure,context);
     }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::String>()){
         return  ExecIfString(inst_Ptr,closure,context);
-    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::ClassInstance>()){
+    }else if(lhs_arg.TryAs<runtime::ClassInstance>()){
         return GetRhs()->Execute(closure,context);
     }else if(!lhs_arg.operator bool()){
         return GetLhs()->Execute(closure,context);
