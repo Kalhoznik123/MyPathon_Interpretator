@@ -55,9 +55,15 @@ ObjectHolder VariableValue::Execute(Closure& closure, Context& /*context*/) {
     for (size_t i = 1; i + 1 < dotted_ids_.size(); ++i){
 
         const auto item = class_ptr->Fields().find(dotted_ids_[i]);
+
         if(item == class_ptr->Fields().end())
             throw std::runtime_error("ERROR:Accessing a non-existent field"s);
         obj = item->second;
+
+        class_ptr = obj.TryAs<runtime::ClassInstance>();
+        if(!class_ptr){
+            throw std::runtime_error("ERROR:The object is not a class"s);
+        }
 
     }
     const auto& fields = obj.TryAs<runtime::ClassInstance>()->Fields();
@@ -246,12 +252,22 @@ IfElse::IfElse(std::unique_ptr<Statement> condition, std::unique_ptr<Statement> 
 
 ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
 
-
     if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Bool>()){
         return Exec(inst_Ptr,closure,context);
     }else if (auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Number>()) {
         return  Exec(inst_Ptr,closure,context);
-    }else{
+    }else if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::String>()){
+
+        return  ExecIfString(inst_Ptr,closure,context);
+    }else if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::ClassInstance>()){
+        return if_body_->Execute(closure,context);
+    }else if(!condition_->Execute(closure,context).operator bool()){
+        if(else_body_){
+            return else_body_->Execute(closure,context);
+        }
+        return runtime::ObjectHolder::None();
+    }
+    else{
         throw std::runtime_error("ERROR: value does not bool value");
     }
 

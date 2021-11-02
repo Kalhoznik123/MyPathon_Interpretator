@@ -356,6 +356,18 @@ private:
         return runtime::ObjectHolder::None();
     }
 
+    template<typename StrPtr>
+    runtime::ObjectHolder ExecIfString(const StrPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+const std::string_view result = obj_ptr->GetValue();
+
+        if(result.size()){
+            return if_body_->Execute(closure,context);
+        }else if(else_body_){
+            return else_body_->Execute(closure,context);
+        }
+        return runtime::ObjectHolder::None();
+    }
+
 };
 
 // Операция сравнения

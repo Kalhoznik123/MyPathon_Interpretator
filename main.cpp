@@ -205,22 +205,133 @@ print "test"
     auto a = output.str();
     std::cout << "Test" << std::endl;
 }
+void TestABC() {
+    istringstream input(R"(
+class A:
+  def __init__():
+    self.n = 0
+
+class B:
+  def __init__():
+    self.a = A()
+
+class C:
+  def __init__():
+    self.b = B()
+
+c = C()
+print c.b.a.n
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    ASSERT(output.str() == "0\n");
+}
+
+void TestABC2() {
+    istringstream input(R"(
+class A:
+  def __init__():
+    self.n = 0
+
+class B:
+  def __init__():
+    self.not_a = 0
+
+class C:
+  def __init__():
+    self.b = B()
+    self.a = A()
+
+c = C()
+print c.b.a.n
+)");
+
+    ostringstream output;
+    ASSERT_THROWS(RunMythonProgram(input, output), std::runtime_error);
+}
+
+void TestStringBoolConversion() {
+    istringstream input(R"(
+if "123":
+  print "truthy"
+else:
+  print "falsey"
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    ASSERT(output.str() == "truthy\n");
+}
+void TestNoneBoolConversion() {
+    istringstream input(R"(
+if None:
+  print "truthy"
+else:
+  print "falsey"
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    ASSERT(output.str() == "falsey\n");
+    //ASSERT(output.str() == "truthy\n");
+}
+void TestBoolClassConversion() {
+    istringstream input(R"(
+class A:
+  def __init__():
+    self.n = 0
+if A():
+  print "truthy"
+else:
+  print "falsey"
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    ASSERT(output.str() == "truthy\n");
+}
+
+void TestNone() {
+    istringstream input(R"(
+class A:
+  def __init__():
+    self.n = 0
+a = A()
+a = None
+if a:
+  print "truthy"
+else:
+  print "falsey"
+)");
+
+    ostringstream output;
+    RunMythonProgram(input, output);
+    ASSERT(output.str() == "falsey\n");
+}
+
 void TestAll() {
     TestRunner tr;
-    parse::RunOpenLexerTests(tr);
-    runtime::RunObjectHolderTests(tr);
-    runtime::RunObjectsTests(tr);
-    ast::RunUnitTests(tr);
-    TestParseProgram(tr);
+//    parse::RunOpenLexerTests(tr);
+//    runtime::RunObjectHolderTests(tr);
+//    runtime::RunObjectsTests(tr);
+//    ast::RunUnitTests(tr);
+//    TestParseProgram(tr);
 
-    RUN_TEST(tr, TestSimplePrints);
-    RUN_TEST(tr, TestAssignments);
-    RUN_TEST(tr, TestArithmetics);
-    RUN_TEST(tr, TestVariablesArePointers);
-    RUN_TEST(tr, TestMethodOverloading);
-    RUN_TEST(tr, TextAssigment2);
-    RUN_TEST(tr, TestBoolConversion);
-    RUN_TEST(tr, TestClass);
+//    RUN_TEST(tr, TestSimplePrints);
+//    RUN_TEST(tr, TestAssignments);
+//    RUN_TEST(tr, TestArithmetics);
+//    RUN_TEST(tr, TestVariablesArePointers);
+//    RUN_TEST(tr, TestMethodOverloading);
+//    RUN_TEST(tr, TextAssigment2);
+//    RUN_TEST(tr, TestBoolConversion);
+//    RUN_TEST(tr,TestABC);
+    RUN_TEST(tr,TestABC2);
+//    RUN_TEST(tr,TestStringBoolConversion);
+//    RUN_TEST(tr,TestNoneBoolConversion);
+//    RUN_TEST(tr,TestBoolClassConversion);
+//    RUN_TEST(tr,TestNone);
+//    RUN_TEST(tr, TestClass);
 }
 
 }  // namespace
