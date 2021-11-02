@@ -312,26 +312,26 @@ else:
 
 void TestAll() {
     TestRunner tr;
-//    parse::RunOpenLexerTests(tr);
-//    runtime::RunObjectHolderTests(tr);
-//    runtime::RunObjectsTests(tr);
-//    ast::RunUnitTests(tr);
-//    TestParseProgram(tr);
+    parse::RunOpenLexerTests(tr);
+    runtime::RunObjectHolderTests(tr);
+    runtime::RunObjectsTests(tr);
+    ast::RunUnitTests(tr);
+    TestParseProgram(tr);
 
-//    RUN_TEST(tr, TestSimplePrints);
-//    RUN_TEST(tr, TestAssignments);
-//    RUN_TEST(tr, TestArithmetics);
-//    RUN_TEST(tr, TestVariablesArePointers);
-//    RUN_TEST(tr, TestMethodOverloading);
-//    RUN_TEST(tr, TextAssigment2);
-//    RUN_TEST(tr, TestBoolConversion);
-//    RUN_TEST(tr,TestABC);
+    RUN_TEST(tr, TestSimplePrints);
+    RUN_TEST(tr, TestAssignments);
+    RUN_TEST(tr, TestArithmetics);
+    RUN_TEST(tr, TestVariablesArePointers);
+    RUN_TEST(tr, TestMethodOverloading);
+    RUN_TEST(tr, TextAssigment2);
+    RUN_TEST(tr, TestBoolConversion);
+    RUN_TEST(tr,TestABC);
     RUN_TEST(tr,TestABC2);
-//    RUN_TEST(tr,TestStringBoolConversion);
-//    RUN_TEST(tr,TestNoneBoolConversion);
-//    RUN_TEST(tr,TestBoolClassConversion);
-//    RUN_TEST(tr,TestNone);
-//    RUN_TEST(tr, TestClass);
+    RUN_TEST(tr,TestStringBoolConversion);
+    RUN_TEST(tr,TestNoneBoolConversion);
+    RUN_TEST(tr,TestBoolClassConversion);
+    RUN_TEST(tr,TestNone);
+    RUN_TEST(tr, TestClass);
 }
 
 }  // namespace
