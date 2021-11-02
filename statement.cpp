@@ -257,9 +257,8 @@ ObjectHolder IfElse::Execute(Closure& closure, Context& context) {
     }else if (auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::Number>()) {
         return  Exec(inst_Ptr,closure,context);
     }else if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::String>()){
-
         return  ExecIfString(inst_Ptr,closure,context);
-    }else if(auto inst_Ptr = condition_->Execute(closure,context).TryAs<runtime::ClassInstance>()){
+    }else if(condition_->Execute(closure,context).TryAs<runtime::ClassInstance>()){
         return if_body_->Execute(closure,context);
     }else if(!condition_->Execute(closure,context).operator bool()){
         if(else_body_){
@@ -280,6 +279,12 @@ ObjectHolder Or::Execute(Closure& closure, Context& context) {
         return Exec(inst_Ptr,closure,context);
     }else if (auto inst_Ptr = lhs_arg.TryAs<runtime::Number>()) {
         return Exec(inst_Ptr,closure,context);
+    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::String>()){
+        return  ExecIfString(inst_Ptr,closure,context);
+    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::ClassInstance>()){
+        return GetLhs()->Execute(closure,context);
+    }else if(!lhs_arg.operator bool()){
+        return GetRhs()->Execute(closure,context);
     }else{
         throw std::runtime_error("ERROR: value does not bool value");
     }
@@ -292,7 +297,14 @@ ObjectHolder And::Execute(Closure& closure, Context& context) {
         return Exec(inst_Ptr,closure,context);
     }else if (auto inst_Ptr = lhs_arg.TryAs<runtime::Number>()) {
         return Exec(inst_Ptr,closure,context);
-    }else{
+    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::String>()){
+        return  ExecIfString(inst_Ptr,closure,context);
+    }else if(auto inst_Ptr = lhs_arg.TryAs<runtime::ClassInstance>()){
+        return GetRhs()->Execute(closure,context);
+    }else if(!lhs_arg.operator bool()){
+        return GetLhs()->Execute(closure,context);
+    }
+    else{
         throw std::runtime_error("ERROR: value does not bool value");
     }
 

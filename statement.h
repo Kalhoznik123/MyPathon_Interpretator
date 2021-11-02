@@ -237,6 +237,19 @@ private:
         }
         return GetRhs()->Execute(closure, context);
     }
+
+    template<typename StrPtr>
+    runtime::ObjectHolder ExecIfString(const StrPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+        const std::string_view result = obj_ptr->GetValue();
+
+        if (result.size())
+        {
+            return GetLhs()->Execute(closure, context);
+        }
+        return GetRhs()->Execute(closure, context);
+    }
+
+
 };
 
 // Возвращает результат вычисления логической операции and над lhs и rhs
@@ -250,6 +263,16 @@ private:
     template<typename ObjPtr>
     runtime::ObjectHolder Exec(const ObjPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
         if (!obj_ptr->GetValue()){
+            return GetLhs()->Execute(closure, context);
+        }
+        return GetRhs()->Execute(closure, context);
+    }
+
+    template<typename StrPtr>
+    runtime::ObjectHolder ExecIfString(const StrPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
+        const std::string_view result = obj_ptr->GetValue();
+
+        if (!result.size()){
             return GetLhs()->Execute(closure, context);
         }
         return GetRhs()->Execute(closure, context);
@@ -358,7 +381,7 @@ private:
 
     template<typename StrPtr>
     runtime::ObjectHolder ExecIfString(const StrPtr& obj_ptr,runtime::Closure& closure, runtime::Context& context){
-const std::string_view result = obj_ptr->GetValue();
+        const std::string_view result = obj_ptr->GetValue();
 
         if(result.size()){
             return if_body_->Execute(closure,context);
